@@ -1,0 +1,22 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-body {
+  display: flex;
+  flex: 1;
+}
+
+.layout-main {
+  flex: 1;
+  background: var(--gray-50);
+  min-height: calc(100vh - 70px);
+}
+
+@media (max-width: 768px) {
+  .layout-body {
+    flex-direction: column;
+  }
+}

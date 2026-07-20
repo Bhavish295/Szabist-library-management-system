@@ -1,0 +1,192 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const pool = require('../config/db');
+const { sendEmail } = require('../utils/email');
+
+const generateToken = (payload) =>
+  jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  });
+
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password, department, semester } = req.body;
+    if (!name || !email || !password || !department || !semester) {
+      return res.status(400).json({ message: 'All fields are required.' });
+    }
+
+    const [existing] = await pool.execute('SELECT student_id FROM Students WHERE email = ?', [email]);
+    if (existing.length > 0) {
+      return res.status(400).json({ message: 'Email already registered.' });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const [result] = await pool.execute(
+      'INSERT INTO Students (name, email, password, department, semester) VALUES (?, ?, ?, ?, ?)',
+      [name, email, hashed, department, semester]
+    );
+
+    const token = generateToken({
+      id: result.insertId,
+      email,
+      name,
+      role: 'student',
+    });
+
+    res.status(201).json({
+      message: 'Registration successful.',
+      token,
+      user: { id: result.insertId, name, email, role: 'student', department, semester },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error during registration.' });
+  }
+};
+
+exports.login = async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email/username and password required.' });
+    }
+
+    if (role === 'admin') {
+      const [admins] = await pool.execute('SELECT * FROM Admins WHERE username = ?', [email]);
+      if (admins.length === 0) {
+        return res.status(401).json({ message: 'Invalid credentials.' });
+      }
+      const admin = admins[0];
+      const valid = await bcrypt.compare(password, admin.password);
+      if (!valid) {
+        return res.status(401).json({ message: 'Invalid credentials.' });
+      }
+      const token = generateToken({ id: admin.admin_id, username: admin.username, role: 'admin' });
+      return res.json({
+        message: 'Login successful.',
+        token,
+        user: { id: admin.admin_id, username: admin.username, role: 'admin' },
+      });
+    }
+
+    const [students] = await pool.execute('SELECT * FROM Students WHERE email = ?', [email]);
+    if (students.length === 0) {
+      return res.status(401).json({ message: 'Invalid credentials.' });
+    }
+    const student = students[0];
+    if (student.is_blocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Contact the library.' });
+    }
+    const valid = await bcrypt.compare(password, student.password);
+    if (!valid) {
+      return res.status(401).json({ message: 'Invalid credentials.' });
+    }
+
+    const token = generateToken({
+      id: student.student_id,
+      email: student.email,
+      name: student.name,
+      role: 'student',
+    });
+
+    res.json({
+      message: 'Login successful.',
+      token,
+      user: {
+        id: student.student_id,
+        name: student.name,
+        email: student.email,
+        role: 'student',
+        department: student.department,
+        semester: student.semester,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error during login.' });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const [students] = await pool.execute('SELECT * FROM Students WHERE email = ?', [email]);
+    if (students.length === 0) {
+      return res.json({ message: 'If that email exists, a reset link has been sent.' });
+    }
+
+    const student = students[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 3600000);
+
+    await pool.execute(
+      'UPDATE Students SET reset_token = ?, reset_token_expiry = ? WHERE student_id = ?',
+      [token, expiry, student.student_id]
+    );
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    await sendEmail(
+      email,
+      'Szabist Library - Password Reset',
+      `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <h2 style="color:#1a365d;">Szabist Digital Library</h2>
+        <p>Hello ${student.name},</p>
+        <p>Click the link below to reset your password (valid for 1 hour):</p>
+        <a href="${resetUrl}" style="background:#d4a853;color:#1a365d;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;">Reset Password</a>
+        <p style="margin-top:20px;color:#666;">If you didn't request this, ignore this email.</p>
+      </div>`
+    );
+
+    res.json({ message: 'If that email exists, a reset link has been sent.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and new password required.' });
+    }
+
+    const [students] = await pool.execute(
+      'SELECT * FROM Students WHERE reset_token = ? AND reset_token_expiry > NOW()',
+      [token]
+    );
+    if (students.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired reset token.' });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    await pool.execute(
+      'UPDATE Students SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE student_id = ?',
+      [hashed, students[0].student_id]
+    );
+
+    res.json({ message: 'Password reset successful. You can now login.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+    if (req.user.role === 'admin') {
+      const [admins] = await pool.execute('SELECT admin_id, username FROM Admins WHERE admin_id = ?', [
+        req.user.id,
+      ]);
+      return res.json(admins[0]);
+    }
+    const [students] = await pool.execute(
+      'SELECT student_id, name, email, department, semester FROM Students WHERE student_id = ?',
+      [req.user.id]
+    );
+    res.json(students[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
