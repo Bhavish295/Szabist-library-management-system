@@ -19,8 +19,16 @@ const Register = () => {
     try {
       await register({ ...form, semester: parseInt(form.semester) });
       navigate('/student');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed.');
+    }catch (err) {
+  console.error('REGISTER ERROR:', err);
+
+  const message =
+    err.response?.data?.message ||
+    err.message ||
+    'Registration failed.';
+
+  setError(message);
+
     } finally {
       setLoading(false);
     }
