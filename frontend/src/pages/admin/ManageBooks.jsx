@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 
 const ManageBooks = () => {
   const [books, setBooks] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -14,20 +16,26 @@ const ManageBooks = () => {
   });
   const [coverFile, setCoverFile] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const load = () => {
+  const load = (page = 1) => {
+    setLoading(true);
     Promise.all([
-      api.get('/books/search'),
+      api.get(`/books/search?limit=20&page=${page}`),
       api.get('/books/categories'),
     ]).then(([booksRes, catRes]) => {
-      setBooks(booksRes.data);
+      setBooks(booksRes.data.books);
+      setPagination(booksRes.data.pagination);
       setCategories(catRes.data);
     }).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(1); }, []);
+
+  const goToPage = (page) => {
+    if (page < 1 || page > pagination.pages) return;
+    load(page);
+  };
 
   const openAdd = () => {
     setEditing(null);
@@ -52,7 +60,6 @@ const ManageBooks = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setMessage('');
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     if (coverFile) fd.append('cover_image', coverFile);
@@ -61,42 +68,41 @@ const ManageBooks = () => {
     try {
       if (editing) {
         await api.put(`/books/${editing.book_id}`, fd);
-        setMessage('Book updated successfully.');
+        toast.success('Book updated successfully.');
       } else {
         await api.post('/books', fd);
-        setMessage('Book added successfully.');
+        toast.success('Book added successfully.');
       }
       setShowModal(false);
-      load();
+      load(pagination.page);
     } catch (err) {
       setError(err.response?.data?.message || 'Operation failed.');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this book?')) return;
+    if (!confirm('Delete this book? This cannot be undone.')) return;
     try {
       await api.delete(`/books/${id}`);
-      setMessage('Book deleted.');
-      load();
+      toast.success('Book deleted.');
+      load(pagination.page);
     } catch (err) {
-      setError(err.response?.data?.message || 'Delete failed.');
+      toast.error(err.response?.data?.message || 'Delete failed.');
     }
   };
 
-  if (loading) return <div className="loading-spinner">Loading...</div>;
+  if (loading) return <div className="loading-spinner"><span className="spin" /> Loading catalogue…</div>;
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header">
         <div>
-          <h1>Book Management</h1>
+          <h1>Book management</h1>
           <p>Add, edit, and delete library books</p>
         </div>
-        <button className="btn btn-primary" onClick={openAdd}><FiPlus /> Add Book</button>
+        <button className="btn btn-primary" onClick={openAdd}><FiPlus /> Add book</button>
       </div>
 
-      {message && <div className="alert alert-success">{message}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="card">
@@ -124,6 +130,18 @@ const ManageBooks = () => {
               ))}
             </tbody>
           </table>
+        </div>
+        {pagination.pages > 1 && (
+          <div className="pagination">
+            <button className="btn btn-outline btn-sm" onClick={() => goToPage(pagination.page - 1)} disabled={pagination.page <= 1}>
+              <FiChevronLeft /> Prev
+            </button>
+            <span className="pagination-info">Page {pagination.page} of {pagination.pages} · {pagination.total} books</span>
+            <button className="btn btn-outline btn-sm" onClick={() => goToPage(pagination.page + 1)} disabled={pagination.page >= pagination.pages}>
+              Next <FiChevronRight />
+            </button>
+          </div>
+        )}
         </div>
       </div>
 

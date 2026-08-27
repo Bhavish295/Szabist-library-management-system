@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { FiUsers } from 'react-icons/fi';
 
 const ManageStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
 
   const load = () => {
     api.get('/students')
@@ -18,27 +18,27 @@ const ManageStudents = () => {
   const toggleBlock = async (id) => {
     try {
       const { data } = await api.put(`/students/${id}/toggle-block`);
-      setMessage(data.message);
+      toast.success(data.message);
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Action failed.');
+      toast.error(err.response?.data?.message || 'Action failed.');
     }
   };
 
-  if (loading) return <div className="loading-spinner">Loading...</div>;
+  if (loading) return <div className="loading-spinner"><span className="spin" /> Loading students…</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1>Student Management</h1>
-        <p>View and manage registered students</p>
+        <div>
+          <h1>Student management</h1>
+          <p>View and manage registered students</p>
+        </div>
       </div>
-
-      {message && <div className="alert alert-success">{message}</div>}
 
       <div className="card">
         {students.length === 0 ? (
-          <div className="empty-state"><FiUsers /><p>No students registered.</p></div>
+          <div className="empty-state"><FiUsers /><p>No students registered yet.</p></div>
         ) : (
           <div className="table-wrapper">
             <table>

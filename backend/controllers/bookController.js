@@ -12,40 +12,56 @@ exports.getCategories = async (req, res) => {
 exports.searchBooks = async (req, res) => {
   try {
     const { title, author, category, isbn, q } = req.query;
-    let sql = `
-      SELECT b.*, c.category_name,
-        CASE WHEN b.available_quantity > 0 THEN 'Available' ELSE 'Unavailable' END as availability_status
-      FROM Books b
-      JOIN Categories c ON b.category_id = c.category_id
-      WHERE 1=1
-    `;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(48, Math.max(1, parseInt(req.query.limit) || 12));
+    const offset = (page - 1) * limit;
+
+    let where = ' WHERE 1=1';
     const params = [];
 
     if (q) {
-      sql += ' AND (b.title LIKE ? OR b.author LIKE ? OR b.isbn LIKE ? OR c.category_name LIKE ?)';
+      where += ' AND (b.title LIKE ? OR b.author LIKE ? OR b.isbn LIKE ? OR c.category_name LIKE ?)';
       const term = `%${q}%`;
       params.push(term, term, term, term);
     }
     if (title) {
-      sql += ' AND b.title LIKE ?';
+      where += ' AND b.title LIKE ?';
       params.push(`%${title}%`);
     }
     if (author) {
-      sql += ' AND b.author LIKE ?';
+      where += ' AND b.author LIKE ?';
       params.push(`%${author}%`);
     }
     if (category) {
-      sql += ' AND c.category_name LIKE ?';
+      where += ' AND c.category_name LIKE ?';
       params.push(`%${category}%`);
     }
     if (isbn) {
-      sql += ' AND b.isbn LIKE ?';
+      where += ' AND b.isbn LIKE ?';
       params.push(`%${isbn}%`);
     }
 
-    sql += ' ORDER BY b.title ASC';
-    const [books] = await pool.execute(sql, params);
-    res.json(books);
+    const [countRows] = await pool.execute(
+      `SELECT COUNT(*) as total FROM Books b JOIN Categories c ON b.category_id = c.category_id${where}`,
+      params
+    );
+    const total = countRows[0].total;
+
+    const [books] = await pool.execute(
+      `SELECT b.*, c.category_name,
+        CASE WHEN b.available_quantity > 0 THEN 'Available' ELSE 'Unavailable' END as availability_status
+       FROM Books b
+       JOIN Categories c ON b.category_id = c.category_id
+       ${where}
+       ORDER BY b.title ASC
+       LIMIT ${limit} OFFSET ${offset}`,
+      params
+    );
+
+    res.json({
+      books,
+      pagination: { total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error.' });

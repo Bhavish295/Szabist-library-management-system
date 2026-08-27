@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiBook, FiDownload } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 
 const Ebooks = () => {
@@ -8,8 +9,8 @@ const Ebooks = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/books/search')
-      .then(({ data }) => setBooks(data.filter(b => b.is_ebook && b.pdf_path)))
+    api.get('/books/search?limit=48')
+      .then(({ data }) => setBooks(data.books.filter(b => b.is_ebook && b.pdf_path)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -22,7 +23,7 @@ const Ebooks = () => {
       link.download = `${book.title}.pdf`;
       link.click();
     } catch {
-      alert('Download failed.');
+      toast.error('Download failed.');
     }
   };
 

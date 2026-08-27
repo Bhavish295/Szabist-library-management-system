@@ -1,11 +1,10 @@
 .navbar {
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
-  height: 70px;
+  background: linear-gradient(120deg, var(--navy-950) 0%, var(--navy-700) 100%);
+  height: 68px;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px -6px rgba(10, 23, 48, 0.35);
 }
 
 .navbar-inner {
@@ -20,13 +19,13 @@
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  color: var(--white);
+  gap: 0.75rem;
+  color: var(--paper-0);
 }
 
 .brand-icon {
-  font-size: 2rem;
-  color: var(--gold);
+  font-size: 1.7rem;
+  color: var(--gold-500);
   transition: transform 0.3s ease;
 }
 
@@ -37,167 +36,123 @@
 .brand-title {
   display: block;
   font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 600;
   line-height: 1.2;
 }
 
 .brand-sub {
   display: block;
-  font-size: 0.7rem;
-  color: var(--gold-light);
+  font-size: 0.65rem;
+  color: var(--gold-300);
+  font-family: var(--font-mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-
-/* Right Actions */
+/* Right actions */
 
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1.1rem;
 }
-
 
 /* Notification */
 
 .notif-btn {
   position: relative;
-  color: var(--white);
-  font-size: 1.3rem;
-  padding: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--paper-0);
+  font-size: 1.2rem;
+  width: 2.35rem;
+  height: 2.35rem;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .notif-btn:hover {
-  background: rgba(255,255,255,0.15);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 .notif-badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  background: var(--danger);
-  color: white;
-  font-size: 0.65rem;
+  top: -2px;
+  right: -2px;
+  background: var(--brick-600);
+  color: var(--paper-0);
+  font-size: 0.62rem;
   font-weight: 700;
-
-  width: 19px;
-  height: 19px;
-
-  border-radius: 50%;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  border:2px solid var(--navy);
-
-  animation: pulse 1.5s infinite;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--navy-700);
 }
-
 
 /* User */
 
 .user-info {
   text-align: right;
-  color: var(--white);
+  color: var(--paper-0);
 }
 
 .user-name {
-  display:block;
-  font-weight:600;
-  font-size:0.9rem;
+  display: block;
+  font-weight: 600;
+  font-size: 0.88rem;
 }
-
 
 .user-role {
-  display:inline-block;
-  margin-top:3px;
-
-  font-size:0.7rem;
-  font-weight:600;
-
-  color:var(--navy-dark);
-  background:var(--gold);
-
-  padding:2px 10px;
-  border-radius:20px;
-
-  text-transform:capitalize;
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--navy-950);
+  background: var(--gold-500);
+  padding: 2px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
-
 
 /* Logout */
 
 .logout-btn {
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  background:rgba(255,255,255,0.12);
-
-  border:1px solid rgba(255,255,255,0.15);
-
-  color:white;
-
-  padding:0.55rem;
-
-  border-radius:var(--radius-sm);
-
-  font-size:1.1rem;
-
-  transition:all .3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--paper-0);
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
-
 
 .logout-btn:hover {
-
-  background:var(--danger);
-
-  transform:translateY(-2px);
-
+  background: var(--brick-600);
+  border-color: var(--brick-600);
+  transform: translateY(-1px);
 }
 
-
-
-/* Animation */
-
-@keyframes pulse {
-
-  0% {
-    transform:scale(1);
+@media (max-width: 640px) {
+  .user-info {
+    display: none;
   }
-
-  50% {
-    transform:scale(1.15);
+  .brand-title {
+    font-size: 1.05rem;
   }
-
-  100% {
-    transform:scale(1);
+  .brand-sub {
+    font-size: 0.58rem;
   }
-
-}
-
-
-/* Mobile */
-
-@media(max-width:640px){
-
-  .user-info{
-    display:none;
-  }
-
-  .brand-title{
-    font-size:1.1rem;
-  }
-
-  .brand-sub{
-    font-size:0.6rem;
-  }
-
 }

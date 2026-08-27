@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { FiDollarSign } from 'react-icons/fi';
 
@@ -6,7 +7,6 @@ const ManageFines = () => {
   const [fines, setFines] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
 
   const load = () => {
     Promise.all([
@@ -23,29 +23,29 @@ const ManageFines = () => {
   const markPaid = async (id) => {
     try {
       const { data } = await api.put(`/fines/${id}/pay`);
-      setMessage(data.message);
+      toast.success(data.message);
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed.');
+      toast.error(err.response?.data?.message || 'Failed.');
     }
   };
 
-  if (loading) return <div className="loading-spinner">Loading...</div>;
+  if (loading) return <div className="loading-spinner"><span className="spin" /> Loading fines…</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1>Fine Management</h1>
-        <p>Auto-calculated fines and payment tracking</p>
+        <div>
+          <h1>Fine management</h1>
+          <p>Auto-calculated fines and payment tracking</p>
+        </div>
       </div>
-
-      {message && <div className="alert alert-success">{message}</div>}
 
       {stats && (
         <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <div className="stat-card">
             <div className="stat-value">{stats.total_fines}</div>
-            <div className="stat-label">Total Fine Records</div>
+            <div className="stat-label">Total fine records</div>
           </div>
           <div className="stat-card danger">
             <div className="stat-value">Rs. {stats.pending_amount}</div>
@@ -79,7 +79,7 @@ const ManageFines = () => {
                     <td>{new Date(f.created_at).toLocaleDateString()}</td>
                     <td>
                       {f.status === 'pending' && (
-                        <button className="btn btn-success btn-sm" onClick={() => markPaid(f.fine_id)}>Mark Paid</button>
+                        <button className="btn btn-success btn-sm" onClick={() => markPaid(f.fine_id)}>Mark paid</button>
                       )}
                     </td>
                   </tr>

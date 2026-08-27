@@ -1,49 +1,25 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const mysql = require('mysql2/promise');
 
-const dbPath = path.join(__dirname, '..', 'library.sqlite');
-
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('SQLite connection failed:', err.message);
-  } else {
-    console.log('SQLite database connected successfully.');
-  }
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '3306', 10),
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'szabist_library',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  dateStrings: true,
 });
 
-const pool = {
-  execute(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      const normalizedSql = sql
-        .replace(/`/g, '')
-        .replace(/\bNOW\(\)/gi, "datetime('now')");
-
-      const isSelect =
-        normalizedSql.trim().toUpperCase().startsWith('SELECT');
-
-      if (isSelect) {
-        db.all(normalizedSql, params, (err, rows) => {
-          if (err) return reject(err);
-          resolve([rows]);
-        });
-      } else {
-        db.run(normalizedSql, params, function (err) {
-          if (err) return reject(err);
-
-          resolve([
-            {
-              insertId: this.lastID,
-              affectedRows: this.changes,
-            },
-          ]);
-        });
-      }
-    });
-  },
-
-  query(sql, params = []) {
-    return this.execute(sql, params);
-  },
-};
+pool
+  .getConnection()
+  .then((conn) => {
+    console.log('MySQL database connected successfully.');
+    conn.release();
+  })
+  .catch((err) => {
+    console.error('MySQL connection failed:', err.message);
+  });
 
 module.exports = pool;

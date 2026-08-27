@@ -46,9 +46,15 @@ const IssuedBooks = () => {
                     <td>Rack {b.rack_no}, Shelf {b.shelf_no}</td>
                     <td>{new Date(b.issue_date).toLocaleDateString()}</td>
                     <td>
-                      {new Date(b.due_date).toLocaleDateString()}
-                      {b.days_overdue > 0 && b.status !== 'returned' && (
-                        <div style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{b.days_overdue}d overdue</div>
+                      {b.status === 'returned' ? (
+                        new Date(b.due_date).toLocaleDateString()
+                      ) : (
+                        <span className={`due-stamp ${b.days_overdue > 0 ? 'overdue' : ''}`}>
+                          <span className="due-stamp-label">{b.days_overdue > 0 ? 'Overdue' : 'Date due'}</span>
+                          <span className="due-stamp-date">
+                            {b.days_overdue > 0 ? `${b.days_overdue}d late` : new Date(b.due_date).toLocaleDateString()}
+                          </span>
+                        </span>
                       )}
                     </td>
                     <td>{b.return_date ? new Date(b.return_date).toLocaleDateString() : '-'}</td>

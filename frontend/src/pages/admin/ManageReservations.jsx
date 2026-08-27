@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { FiCheckSquare } from 'react-icons/fi';
 
@@ -6,7 +7,6 @@ const ManageReservations = () => {
   const [reservations, setReservations] = useState([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
 
   const load = () => {
     const url = filter ? `/reservations?status=${filter}` : '/reservations';
@@ -20,50 +20,48 @@ const ManageReservations = () => {
   const approve = async (id) => {
     try {
       const { data } = await api.put(`/reservations/${id}/approve`);
-      setMessage(data.message);
+      toast.success(data.message);
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed.');
+      toast.error(err.response?.data?.message || 'Failed.');
     }
   };
 
   const reject = async (id) => {
     try {
       const { data } = await api.put(`/reservations/${id}/reject`);
-      setMessage(data.message);
+      toast.success(data.message);
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed.');
+      toast.error(err.response?.data?.message || 'Failed.');
     }
   };
 
   const cancelExpired = async () => {
     try {
       const { data } = await api.post('/reservations/cancel-expired');
-      setMessage(data.message);
+      toast.success(data.message);
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed.');
+      toast.error(err.response?.data?.message || 'Failed.');
     }
   };
 
-  if (loading) return <div className="loading-spinner">Loading...</div>;
+  if (loading) return <div className="loading-spinner"><span className="spin" /> Loading reservations…</div>;
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header">
         <div>
-          <h1>Reservation Management</h1>
+          <h1>Reservation management</h1>
           <p>Approve, reject, or cancel expired reservations</p>
         </div>
-        <button className="btn btn-outline" onClick={cancelExpired}>Cancel Expired</button>
+        <button className="btn btn-outline" onClick={cancelExpired}>Cancel expired</button>
       </div>
-
-      {message && <div className="alert alert-success">{message}</div>}
 
       <div style={{ marginBottom: '1rem' }}>
         <select className="form-control" style={{ maxWidth: '200px' }} value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="">All Status</option>
+          <option value="">All status</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>

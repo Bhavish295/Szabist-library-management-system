@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { FiRefreshCw } from 'react-icons/fi';
 
@@ -9,18 +10,17 @@ const IssueReturn = () => {
   const [loading, setLoading] = useState(true);
   const [showIssue, setShowIssue] = useState(false);
   const [issueForm, setIssueForm] = useState({ student_id: '', book_id: '' });
-  const [message, setMessage] = useState('');
   const [filter, setFilter] = useState('issued');
 
   const load = () => {
     Promise.all([
       api.get(`/issues${filter ? `?status=${filter}` : ''}`),
       api.get('/students'),
-      api.get('/books/search'),
+      api.get('/books/search?limit=48'),
     ]).then(([issuesRes, studentsRes, booksRes]) => {
       setIssues(issuesRes.data);
       setStudents(studentsRes.data.filter(s => !s.is_blocked));
-      setBooks(booksRes.data.filter(b => b.available_quantity > 0));
+      setBooks(booksRes.data.books.filter(b => b.available_quantity > 0));
     }).finally(() => setLoading(false));
   };
 
@@ -30,12 +30,12 @@ const IssueReturn = () => {
     e.preventDefault();
     try {
       const { data } = await api.post('/issues/issue', issueForm);
-      setMessage(data.message);
+      toast.success(data.message);
       setShowIssue(false);
       setIssueForm({ student_id: '', book_id: '' });
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Issue failed.');
+      toast.error(err.response?.data?.message || 'Issue failed.');
     }
   };
 
@@ -43,10 +43,10 @@ const IssueReturn = () => {
     if (!confirm('Confirm book return?')) return;
     try {
       const { data } = await api.post('/issues/return', { issue_id: issueId });
-      setMessage(`${data.message}${data.fine > 0 ? ` Fine: Rs. ${data.fine}` : ''}`);
+      toast.success(`${data.message}${data.fine > 0 ? ` Fine: Rs. ${data.fine}` : ''}`);
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Return failed.');
+      toast.error(err.response?.data?.message || 'Return failed.');
     }
   };
 
@@ -61,8 +61,6 @@ const IssueReturn = () => {
         </div>
         <button className="btn btn-primary" onClick={() => setShowIssue(true)}>Issue Book</button>
       </div>
-
-      {message && <div className="alert alert-success">{message}</div>}
 
       <div style={{ marginBottom: '1rem' }}>
         <select className="form-control" style={{ maxWidth: '200px' }} value={filter} onChange={(e) => setFilter(e.target.value)}>

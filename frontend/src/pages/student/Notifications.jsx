@@ -55,18 +55,18 @@ const Notifications = () => {
               onClick={() => !n.is_read && markRead(n.notification_id)}
               style={{
                 padding: '1rem',
-                borderBottom: '1px solid var(--gray-200)',
+                borderBottom: '1px solid var(--paper-200)',
                 cursor: n.is_read ? 'default' : 'pointer',
                 background: n.is_read ? 'transparent' : 'rgba(212, 168, 83, 0.08)',
                 borderRadius: n.is_read ? 0 : 'var(--radius-sm)',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                <strong style={{ color: 'var(--navy)' }}>{n.title}</strong>
+                <strong style={{ color: 'var(--navy-700)' }}>{n.title}</strong>
                 <span className={`badge ${typeIcon(n.type)}`}>{n.type.replace('_', ' ')}</span>
               </div>
-              <p style={{ color: 'var(--gray-700)', fontSize: '0.9rem' }}>{n.message}</p>
-              <small style={{ color: 'var(--gray-500)' }}>{new Date(n.created_at).toLocaleString()}</small>
+              <p style={{ color: 'var(--ink-700)', fontSize: '0.9rem' }}>{n.message}</p>
+              <small style={{ color: 'var(--ink-500)' }}>{new Date(n.created_at).toLocaleString()}</small>
             </div>
           ))
         )}
