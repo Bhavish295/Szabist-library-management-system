@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiDownload } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { downloadCsv } from '../../utils/csv';
 
 const ManageBooks = () => {
   const [books, setBooks] = useState([]);
@@ -91,6 +92,19 @@ const ManageBooks = () => {
     }
   };
 
+  const exportCsv = () => {
+    downloadCsv('books-inventory.csv', books, [
+      { key: 'title', label: 'Title' },
+      { key: 'author', label: 'Author' },
+      { key: 'category_name', label: 'Category' },
+      { key: 'isbn', label: 'ISBN' },
+      { key: 'quantity', label: 'Quantity' },
+      { key: 'available_quantity', label: 'Available' },
+      { key: 'rack_no', label: 'Rack' },
+      { key: 'shelf_no', label: 'Shelf' },
+    ]);
+  };
+
   if (loading) return <div className="loading-spinner"><span className="spin" /> Loading catalogue…</div>;
 
   return (
@@ -100,7 +114,12 @@ const ManageBooks = () => {
           <h1>Book management</h1>
           <p>Add, edit, and delete library books</p>
         </div>
-        <button className="btn btn-primary" onClick={openAdd}><FiPlus /> Add book</button>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <button className="btn btn-outline" onClick={exportCsv} disabled={books.length === 0}>
+            <FiDownload /> Export page (CSV)
+          </button>
+          <button className="btn btn-primary" onClick={openAdd}><FiPlus /> Add book</button>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}

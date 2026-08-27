@@ -2,10 +2,27 @@ const pool = require('../config/db');
 
 exports.getAllStudents = async (req, res) => {
   try {
+    const { q } = req.query;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 15));
+    const offset = (page - 1) * limit;
+
+    let where = '';
+    const params = [];
+    if (q) {
+      where = ' WHERE name LIKE ? OR email LIKE ?';
+      params.push(`%${q}%`, `%${q}%`);
+    }
+
+    const [countRows] = await pool.execute(`SELECT COUNT(*) as total FROM Students${where}`, params);
+    const total = countRows[0].total;
+
     const [students] = await pool.execute(
-      'SELECT student_id, name, email, department, semester, is_blocked, created_at FROM Students ORDER BY name'
+      `SELECT student_id, name, email, department, semester, is_blocked, created_at
+       FROM Students${where} ORDER BY name LIMIT ${limit} OFFSET ${offset}`,
+      params
     );
-    res.json(students);
+    res.json({ students, pagination: { total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) } });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }

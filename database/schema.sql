@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS Reservations (
   reservation_id INT AUTO_INCREMENT PRIMARY KEY,
   student_id INT NOT NULL,
   book_id INT NOT NULL,
-  status ENUM('pending', 'approved', 'rejected', 'expired', 'cancelled') DEFAULT 'pending',
+  status ENUM('pending', 'approved', 'rejected', 'expired', 'cancelled', 'waitlisted') DEFAULT 'pending',
   reservation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  expiry_date DATETIME NOT NULL,
+  expiry_date DATETIME NULL,
   FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
   FOREIGN KEY (book_id) REFERENCES Books(book_id) ON DELETE CASCADE
 );

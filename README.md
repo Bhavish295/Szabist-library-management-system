@@ -12,22 +12,30 @@ A full-stack library management system for **Shaheed Zulfikar Ali Bhutto Institu
 
 ### Student
 - Register, Login, Forgot Password
+- Account page: edit profile, change password
 - Dashboard with issued books, reservations, fines, due date alerts
-- Search books (title, author, category, ISBN)
+- Search books (title, author, category, ISBN), paginated catalogue
 - Book details with rack/shelf location and availability
 - Online reservations (24-hour hold, duplicate prevention)
+- Hold queue / waitlist when a book has no copies available — automatically
+  promoted to an active hold (with email + in-app notification) the moment
+  a copy frees up, FIFO by request time
+- Self-service reservation cancellation
+- Self-service book renewal (up to 2 renewals, blocked if overdue or if
+  another student is waiting)
 - Issued books history with due dates
 - Auto-calculated fines
 - E-book PDF downloads
 - In-app and email notifications
 
 ### Admin (Librarian)
-- Dashboard analytics (books, students, fines, categories)
-- Add/Edit/Delete books with cover image and PDF upload
-- Student management (block/unblock)
-- Approve/Reject reservations, cancel expired
-- Issue & Return books with auto availability update
-- Fine management and reports
+- Account page: change password
+- Dashboard analytics (books, students, fines, categories) with charts
+- Add/Edit/Delete books with cover image and PDF upload, paginated + CSV export
+- Student management (block/unblock), paginated + searchable
+- Approve/Reject reservations, cancel expired, paginated
+- Issue & Return books with auto availability update, paginated
+- Fine management and reports, paginated + CSV export
 
 ## Setup Instructions
 
@@ -40,6 +48,10 @@ A full-stack library management system for **Shaheed Zulfikar Ali Bhutto Institu
 ```bash
 mysql -u root -p < database/schema.sql
 ```
+
+If you already have a database from before renewals/waitlist support was
+added, also run the migrations in `database/migrations/` in order (fresh
+installs via `schema.sql` above don't need them).
 
 ### 2. Backend Setup
 
@@ -76,10 +88,14 @@ Open **http://localhost:5173**
 |--------|----------|-------------|
 | POST | `/api/auth/register` | Student registration |
 | POST | `/api/auth/login` | Login (student/admin) |
-| GET | `/api/books/search` | Search books |
-| POST | `/api/reservations` | Create reservation |
+| PUT | `/api/auth/profile` | Update own profile (student) |
+| PUT | `/api/auth/change-password` | Change own password (either role) |
+| GET | `/api/books/search` | Search books (paginated) |
+| POST | `/api/reservations` | Create reservation, or join the waitlist if unavailable |
+| PUT | `/api/reservations/:id/cancel` | Cancel own pending/waitlisted reservation |
 | POST | `/api/issues/issue` | Issue book (admin) |
-| POST | `/api/issues/return` | Return book (admin) |
+| POST | `/api/issues/return` | Return book (admin) — auto-promotes the next waitlisted student |
+| POST | `/api/issues/:id/renew` | Renew own issued book (student) |
 | GET | `/api/dashboard` | Admin analytics |
 
 ## Color Theme

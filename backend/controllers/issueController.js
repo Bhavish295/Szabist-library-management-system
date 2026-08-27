@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { calculateFine, FINE_PER_DAY } = require('../utils/fines');
 const { createNotification } = require('../utils/notifications');
 const { sendEmail } = require('../utils/email');
+const { promoteNextWaitlisted } = require('../utils/waitlist');
 
 const ISSUE_DAYS = parseInt(process.env.BOOK_ISSUE_DAYS || '14');
 const MAX_RENEWALS = parseInt(process.env.MAX_RENEWALS || '2');
@@ -27,20 +28,31 @@ exports.getMyIssuedBooks = async (req, res) => {
 exports.getAllIssuedBooks = async (req, res) => {
   try {
     const { status } = req.query;
-    let sql = `
-      SELECT ib.*, b.title, b.author, s.name as student_name, s.email
-      FROM IssuedBooks ib
-      JOIN Books b ON ib.book_id = b.book_id
-      JOIN Students s ON ib.student_id = s.student_id
-    `;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 15));
+    const offset = (page - 1) * limit;
+
+    let where = '';
     const params = [];
     if (status) {
-      sql += ' WHERE ib.status = ?';
+      where = ' WHERE ib.status = ?';
       params.push(status);
     }
-    sql += ' ORDER BY ib.issue_date DESC';
-    const [books] = await pool.execute(sql, params);
-    res.json(books);
+
+    const [countRows] = await pool.execute(`SELECT COUNT(*) as total FROM IssuedBooks ib${where}`, params);
+    const total = countRows[0].total;
+
+    const [issues] = await pool.execute(
+      `SELECT ib.*, b.title, b.author, s.name as student_name, s.email
+       FROM IssuedBooks ib
+       JOIN Books b ON ib.book_id = b.book_id
+       JOIN Students s ON ib.student_id = s.student_id
+       ${where}
+       ORDER BY ib.issue_date DESC
+       LIMIT ${limit} OFFSET ${offset}`,
+      params
+    );
+    res.json({ issues, pagination: { total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) } });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
@@ -186,6 +198,7 @@ exports.returnBook = async (req, res) => {
     await pool.execute('UPDATE Books SET available_quantity = available_quantity + 1 WHERE book_id = ?', [
       issue.book_id,
     ]);
+    await promoteNextWaitlisted(issue.book_id);
 
     if (fineAmount > 0) {
       await pool.execute(

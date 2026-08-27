@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { promoteNextWaitlisted } = require('../utils/waitlist');
 
 exports.getCategories = async (req, res) => {
   try {
@@ -158,6 +159,9 @@ exports.updateBook = async (req, res) => {
         id,
       ]
     );
+    if (newAvailable > book.available_quantity) {
+      await promoteNextWaitlisted(id);
+    }
     res.json({ message: 'Book updated successfully.' });
   } catch (err) {
     console.error(err);

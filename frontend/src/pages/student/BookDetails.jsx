@@ -88,9 +88,11 @@ const BookDetails = () => {
             <button
               className="btn btn-primary"
               onClick={handleReserve}
-              disabled={reserving || book.available_quantity <= 0}
+              disabled={reserving}
             >
-              {reserving ? 'Reserving…' : 'Reserve book (24hr hold)'}
+              {reserving
+                ? (book.available_quantity > 0 ? 'Reserving…' : 'Joining waitlist…')
+                : (book.available_quantity > 0 ? 'Reserve book (24hr hold)' : 'Join waitlist')}
             </button>
             {book.is_ebook && book.pdf_path && (
               <button className="btn btn-secondary" onClick={handleDownload}>

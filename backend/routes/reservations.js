@@ -10,6 +10,7 @@ const createRules = [body('book_id').isInt({ min: 1 }).withMessage('A valid book
 
 router.post('/', authenticate, requireStudent, createRules, validate, reservationController.createReservation);
 router.get('/my', authenticate, requireStudent, reservationController.getMyReservations);
+router.put('/:id/cancel', authenticate, requireStudent, idParamRule, validate, reservationController.cancelMyReservation);
 router.get('/', authenticate, requireAdmin, reservationController.getAllReservations);
 router.put('/:id/approve', authenticate, requireAdmin, idParamRule, validate, reservationController.approveReservation);
 router.put('/:id/reject', authenticate, requireAdmin, idParamRule, validate, reservationController.rejectReservation);
