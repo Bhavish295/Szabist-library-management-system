@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   FiHome, FiSearch, FiBookOpen, FiClock, FiDollarSign,
-  FiUsers, FiBook, FiCheckSquare, FiRefreshCw, FiBarChart2
+  FiUsers, FiBook, FiCheckSquare, FiRefreshCw, FiBarChart2, FiUser
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -12,6 +12,7 @@ const studentLinks = [
   { to: '/student/reservations', icon: FiClock, label: 'Reservations' },
   { to: '/student/fines', icon: FiDollarSign, label: 'Fines' },
   { to: '/student/ebooks', icon: FiBook, label: 'E-Books' },
+  { to: '/student/profile', icon: FiUser, label: 'Account' },
 ];
 
 const adminLinks = [
@@ -21,6 +22,7 @@ const adminLinks = [
   { to: '/admin/reservations', icon: FiCheckSquare, label: 'Reservations' },
   { to: '/admin/issues', icon: FiRefreshCw, label: 'Issue & Return' },
   { to: '/admin/fines', icon: FiDollarSign, label: 'Fines' },
+  { to: '/admin/profile', icon: FiUser, label: 'Account' },
 ];
 
 const Sidebar = ({ role }) => {

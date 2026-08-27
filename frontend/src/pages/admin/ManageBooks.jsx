@@ -142,7 +142,6 @@ const ManageBooks = () => {
             </button>
           </div>
         )}
-        </div>
       </div>
 
       {showModal && (

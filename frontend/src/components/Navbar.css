@@ -101,6 +101,13 @@
 .user-info {
   text-align: right;
   color: var(--paper-0);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+  transition: background 0.15s;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .user-name {

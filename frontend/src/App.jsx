@@ -19,6 +19,7 @@ import ManageStudents from './pages/admin/ManageStudents';
 import ManageReservations from './pages/admin/ManageReservations';
 import IssueReturn from './pages/admin/IssueReturn';
 import ManageFines from './pages/admin/ManageFines';
+import Profile from './pages/Profile';
 
 const HomeRedirect = () => {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ function App() {
         <Route path="fines" element={<Fines />} />
         <Route path="ebooks" element={<Ebooks />} />
         <Route path="notifications" element={<Notifications />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       <Route path="/admin" element={<Layout role="admin" />}>
@@ -54,6 +56,7 @@ function App() {
         <Route path="reservations" element={<ManageReservations />} />
         <Route path="issues" element={<IssueReturn />} />
         <Route path="fines" element={<ManageFines />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

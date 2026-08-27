@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS IssuedBooks (
   due_date DATE NOT NULL,
   return_date DATE DEFAULT NULL,
   status ENUM('issued', 'returned', 'overdue') DEFAULT 'issued',
+  renewal_count INT NOT NULL DEFAULT 0,
   FOREIGN KEY (student_id) REFERENCES Students(student_id) ON DELETE CASCADE,
   FOREIGN KEY (book_id) REFERENCES Books(book_id) ON DELETE CASCADE
 );

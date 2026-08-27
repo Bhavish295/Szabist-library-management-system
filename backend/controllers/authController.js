@@ -182,11 +182,54 @@ exports.getProfile = async (req, res) => {
       return res.json(admins[0]);
     }
     const [students] = await pool.execute(
-      'SELECT student_id, name, email, department, semester FROM Students WHERE student_id = ?',
+      'SELECT student_id, name, email, department, semester, created_at FROM Students WHERE student_id = ?',
       [req.user.id]
     );
     res.json(students[0]);
   } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(400).json({ message: 'Only student profiles can be edited here.' });
+    }
+    const { name, department, semester } = req.body;
+    await pool.execute(
+      'UPDATE Students SET name = ?, department = ?, semester = ? WHERE student_id = ?',
+      [name, department, semester, req.user.id]
+    );
+    const [students] = await pool.execute(
+      'SELECT student_id, name, email, department, semester FROM Students WHERE student_id = ?',
+      [req.user.id]
+    );
+    res.json({ message: 'Profile updated successfully.', user: { ...students[0], id: students[0].student_id, role: 'student' } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const table = req.user.role === 'admin' ? 'Admins' : 'Students';
+    const idCol = req.user.role === 'admin' ? 'admin_id' : 'student_id';
+
+    const [rows] = await pool.execute(`SELECT * FROM ${table} WHERE ${idCol} = ?`, [req.user.id]);
+    if (rows.length === 0) return res.status(404).json({ message: 'Account not found.' });
+
+    const valid = await bcrypt.compare(currentPassword, rows[0].password);
+    if (!valid) return res.status(400).json({ message: 'Current password is incorrect.' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await pool.execute(`UPDATE ${table} SET password = ? WHERE ${idCol} = ?`, [hashed, req.user.id]);
+
+    res.json({ message: 'Password changed successfully.' });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };

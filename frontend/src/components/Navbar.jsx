@@ -41,10 +41,10 @@ const Navbar = () => {
               {unread > 0 && <span className="notif-badge">{unread}</span>}
             </Link>
           )}
-          <div className="user-info">
+          <Link to={user?.role === 'admin' ? '/admin/profile' : '/student/profile'} className="user-info" title="Account settings">
             <span className="user-name">{user?.name || user?.username}</span>
             <span className="user-role">{user?.role}</span>
-          </div>
+          </Link>
           <button className="logout-btn" onClick={handleLogout} title="Logout">
             <FiLogOut />
           </button>

@@ -4,6 +4,7 @@ const { createNotification } = require('../utils/notifications');
 const { sendEmail } = require('../utils/email');
 
 const ISSUE_DAYS = parseInt(process.env.BOOK_ISSUE_DAYS || '14');
+const MAX_RENEWALS = parseInt(process.env.MAX_RENEWALS || '2');
 
 exports.getMyIssuedBooks = async (req, res) => {
   try {
@@ -98,6 +99,61 @@ exports.issueBook = async (req, res) => {
       issue_id: result.insertId,
       due_date: dueDate,
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+exports.renewBook = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [issues] = await pool.execute(
+      `SELECT ib.*, b.title FROM IssuedBooks ib JOIN Books b ON ib.book_id = b.book_id WHERE ib.issue_id = ?`,
+      [id]
+    );
+    if (issues.length === 0) return res.status(404).json({ message: 'Issue record not found.' });
+    const issue = issues[0];
+
+    if (issue.student_id !== req.user.id) {
+      return res.status(403).json({ message: 'You can only renew your own books.' });
+    }
+    if (issue.status !== 'issued') {
+      return res.status(400).json({
+        message: issue.status === 'overdue'
+          ? 'Overdue books cannot be renewed — please return or pay the fine first.'
+          : 'This book has already been returned.',
+      });
+    }
+    if (issue.renewal_count >= MAX_RENEWALS) {
+      return res.status(400).json({ message: `Renewal limit reached (max ${MAX_RENEWALS}).` });
+    }
+
+    // Fairness: don't renew a copy someone else is waiting on.
+    const [waiting] = await pool.execute(
+      "SELECT reservation_id FROM Reservations WHERE book_id = ? AND status IN ('pending', 'approved')",
+      [issue.book_id]
+    );
+    if (waiting.length > 0) {
+      return res.status(400).json({ message: 'Another student has a pending reservation for this book — renewal is not available.' });
+    }
+
+    const newDueDate = new Date(issue.due_date);
+    newDueDate.setDate(newDueDate.getDate() + ISSUE_DAYS);
+
+    await pool.execute(
+      'UPDATE IssuedBooks SET due_date = ?, renewal_count = renewal_count + 1 WHERE issue_id = ?',
+      [newDueDate, id]
+    );
+
+    await createNotification(
+      req.user.id,
+      'Book Renewed',
+      `"${issue.title}" renewed. New due date: ${newDueDate.toLocaleDateString()}.`,
+      'general'
+    );
+
+    res.json({ message: 'Book renewed successfully.', due_date: newDueDate, renewals_left: MAX_RENEWALS - issue.renewal_count - 1 });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error.' });

@@ -1,23 +1,42 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
-import { FiBookOpen } from 'react-icons/fi';
+import { FiBookOpen, FiRotateCw } from 'react-icons/fi';
+
+const MAX_RENEWALS = 2;
 
 const IssuedBooks = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [renewingId, setRenewingId] = useState(null);
 
-  useEffect(() => {
+  const load = () => {
     api.get('/issues/my')
       .then(({ data }) => setBooks(data))
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  if (loading) return <div className="loading-spinner">Loading...</div>;
+  useEffect(() => { load(); }, []);
+
+  const handleRenew = async (issueId) => {
+    setRenewingId(issueId);
+    try {
+      const { data } = await api.post(`/issues/${issueId}/renew`);
+      toast.success(data.message);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Renewal failed.');
+    } finally {
+      setRenewingId(null);
+    }
+  };
+
+  if (loading) return <div className="loading-spinner"><span className="spin" /> Loading…</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1>Issued Books History</h1>
+        <h1>Issued books history</h1>
         <p>Track your borrowed books, due dates, and returns</p>
       </div>
 
@@ -32,10 +51,11 @@ const IssuedBooks = () => {
                   <th>Title</th>
                   <th>Author</th>
                   <th>Location</th>
-                  <th>Issue Date</th>
-                  <th>Due Date</th>
-                  <th>Return Date</th>
+                  <th>Issue date</th>
+                  <th>Due date</th>
+                  <th>Return date</th>
                   <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -62,6 +82,22 @@ const IssuedBooks = () => {
                       <span className={`badge badge-${b.status === 'returned' ? 'success' : b.status === 'overdue' ? 'danger' : 'info'}`}>
                         {b.status}
                       </span>
+                    </td>
+                    <td>
+                      {b.status === 'issued' && (
+                        b.renewal_count < MAX_RENEWALS ? (
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => handleRenew(b.issue_id)}
+                            disabled={renewingId === b.issue_id}
+                            title={`${MAX_RENEWALS - b.renewal_count} renewal(s) left`}
+                          >
+                            <FiRotateCw /> {renewingId === b.issue_id ? 'Renewing…' : 'Renew'}
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--ink-300)' }}>Limit reached</span>
+                        )
+                      )}
                     </td>
                   </tr>
                 ))}

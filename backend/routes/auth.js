@@ -26,10 +26,23 @@ const resetPasswordRules = [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters.'),
 ];
 
+const updateProfileRules = [
+  body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be 2-100 characters.'),
+  body('department').trim().notEmpty().withMessage('Department is required.'),
+  body('semester').isInt({ min: 1, max: 12 }).withMessage('Semester must be a number between 1 and 12.'),
+];
+
+const changePasswordRules = [
+  body('currentPassword').notEmpty().withMessage('Current password is required.'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters.'),
+];
+
 router.post('/register', authLimiter, registerRules, validate, authController.register);
 router.post('/login', authLimiter, loginRules, validate, authController.login);
 router.post('/forgot-password', authLimiter, forgotPasswordRules, validate, authController.forgotPassword);
 router.post('/reset-password', authLimiter, resetPasswordRules, validate, authController.resetPassword);
 router.get('/profile', authenticate, authController.getProfile);
+router.put('/profile', authenticate, updateProfileRules, validate, authController.updateProfile);
+router.put('/change-password', authenticate, changePasswordRules, validate, authController.changePassword);
 
 module.exports = router;
