@@ -44,5 +44,6 @@ router.post('/reset-password', authLimiter, resetPasswordRules, validate, authCo
 router.get('/profile', authenticate, authController.getProfile);
 router.put('/profile', authenticate, updateProfileRules, validate, authController.updateProfile);
 router.put('/change-password', authenticate, changePasswordRules, validate, authController.changePassword);
+router.post('/logout', authController.logout);
 
 module.exports = router;

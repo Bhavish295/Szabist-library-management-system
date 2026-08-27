@@ -9,6 +9,26 @@ const generateToken = (payload) =>
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 
+// 7d default to match JWT_EXPIRES_IN's default; parses a "7d"/"1h"-style
+// duration if it's been overridden, otherwise falls back to 7 days.
+const cookieMaxAge = () => {
+  const raw = process.env.JWT_EXPIRES_IN || '7d';
+  const match = /^(\d+)([smhd])$/.exec(raw);
+  if (!match) return 7 * 24 * 60 * 60 * 1000;
+  const value = parseInt(match[1], 10);
+  const unitMs = { s: 1000, m: 60000, h: 3600000, d: 86400000 }[match[2]];
+  return value * unitMs;
+};
+
+const setAuthCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: cookieMaxAge(),
+  });
+};
+
 exports.register = async (req, res) => {
   try {
     const { name, email, password, department, semester } = req.body;
@@ -33,6 +53,7 @@ exports.register = async (req, res) => {
       name,
       role: 'student',
     });
+    setAuthCookie(res, token);
 
     res.status(201).json({
       message: 'Registration successful.',
@@ -63,6 +84,7 @@ exports.login = async (req, res) => {
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
       const token = generateToken({ id: admin.admin_id, username: admin.username, role: 'admin' });
+      setAuthCookie(res, token);
       return res.json({
         message: 'Login successful.',
         token,
@@ -89,6 +111,7 @@ exports.login = async (req, res) => {
       name: student.name,
       role: 'student',
     });
+    setAuthCookie(res, token);
 
     res.json({
       message: 'Login successful.',
@@ -179,16 +202,27 @@ exports.getProfile = async (req, res) => {
       const [admins] = await pool.execute('SELECT admin_id, username FROM Admins WHERE admin_id = ?', [
         req.user.id,
       ]);
-      return res.json(admins[0]);
+      if (admins.length === 0) return res.status(404).json({ message: 'Account not found.' });
+      return res.json({ id: admins[0].admin_id, username: admins[0].username, role: 'admin' });
     }
     const [students] = await pool.execute(
       'SELECT student_id, name, email, department, semester, created_at FROM Students WHERE student_id = ?',
       [req.user.id]
     );
-    res.json(students[0]);
+    if (students.length === 0) return res.status(404).json({ message: 'Account not found.' });
+    res.json({ ...students[0], id: students[0].student_id, role: 'student' });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
+};
+
+exports.logout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+  res.json({ message: 'Logged out.' });
 };
 
 exports.updateProfile = async (req, res) => {

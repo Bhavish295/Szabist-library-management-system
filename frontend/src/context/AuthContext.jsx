@@ -8,42 +8,37 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (stored && token) {
-      setUser(JSON.parse(stored));
-    }
-    setLoading(false);
+    // The auth token is an httpOnly cookie — JS can't read it, so the only
+    // way to know if a session is still valid on page load is to ask the
+    // server. A 401 here just means "not logged in", not an error.
+    api.get('/auth/profile')
+      .then(({ data }) => setUser(data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (credentials) => {
     const { data } = await api.post('/auth/login', credentials);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
     return data;
   };
 
   const register = async (userData) => {
     const { data } = await api.post('/auth/register', userData);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
     return data;
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      setUser(null);
+    }
   };
 
   const updateUser = (partial) => {
-    setUser((prev) => {
-      const next = { ...prev, ...partial };
-      localStorage.setItem('user', JSON.stringify(next));
-      return next;
-    });
+    setUser((prev) => ({ ...prev, ...partial }));
   };
 
   return (

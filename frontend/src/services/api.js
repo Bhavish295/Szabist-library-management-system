@@ -1,26 +1,18 @@
 import axios from 'axios';
 
+// The auth token lives in an httpOnly cookie the browser manages — never
+// in localStorage/JS-readable storage, so it can't be exfiltrated by an
+// XSS payload. withCredentials makes axios send/receive it automatically.
 const api = axios.create({
   baseURL: '/api',
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+  withCredentials: true,
 });
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
-      }
+    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
