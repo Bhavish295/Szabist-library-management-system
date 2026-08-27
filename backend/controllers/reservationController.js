@@ -96,7 +96,9 @@ exports.getMyReservations = async (req, res) => {
     const [reservations] = await pool.execute(
       `SELECT r.*, b.title, b.author, b.rack_no, b.shelf_no, c.category_name,
         (SELECT COUNT(*) FROM Reservations r2
-          WHERE r2.book_id = r.book_id AND r2.status = 'waitlisted' AND r2.reservation_date <= r.reservation_date
+          WHERE r2.book_id = r.book_id AND r2.status = 'waitlisted'
+            AND (r2.reservation_date < r.reservation_date
+                 OR (r2.reservation_date = r.reservation_date AND r2.reservation_id <= r.reservation_id))
         ) as queue_position
        FROM Reservations r
        JOIN Books b ON r.book_id = b.book_id

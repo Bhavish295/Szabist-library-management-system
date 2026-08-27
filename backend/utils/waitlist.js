@@ -18,7 +18,7 @@ const promoteNextWaitlisted = async (bookId) => {
      JOIN Students s ON r.student_id = s.student_id
      JOIN Books b ON r.book_id = b.book_id
      WHERE r.book_id = ? AND r.status = 'waitlisted'
-     ORDER BY r.reservation_date ASC
+     ORDER BY r.reservation_date ASC, r.reservation_id ASC
      LIMIT 1`,
     [bookId]
   );

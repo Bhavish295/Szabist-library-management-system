@@ -141,13 +141,15 @@ exports.renewBook = async (req, res) => {
       return res.status(400).json({ message: `Renewal limit reached (max ${MAX_RENEWALS}).` });
     }
 
-    // Fairness: don't renew a copy someone else is waiting on.
+    // Fairness: don't renew a copy someone else is waiting on — including
+    // the waitlist, otherwise the current holder could renew indefinitely
+    // and the queue would never actually get the book back.
     const [waiting] = await pool.execute(
-      "SELECT reservation_id FROM Reservations WHERE book_id = ? AND status IN ('pending', 'approved')",
+      "SELECT reservation_id FROM Reservations WHERE book_id = ? AND status IN ('pending', 'approved', 'waitlisted')",
       [issue.book_id]
     );
     if (waiting.length > 0) {
-      return res.status(400).json({ message: 'Another student has a pending reservation for this book — renewal is not available.' });
+      return res.status(400).json({ message: 'Another student is waiting for this book — renewal is not available.' });
     }
 
     const newDueDate = new Date(issue.due_date);

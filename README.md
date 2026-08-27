@@ -82,6 +82,22 @@ Open **http://localhost:5173**
 | Admin   | `admin`            | `admin123`  |
 | Student | `ahmed@szabist.edu.pk` | `student123` |
 
+## Testing
+
+The backend has an integration test suite (Jest + Supertest) covering
+auth, book search, and the full reservation/waitlist and issue/renewal
+flows against a real MySQL database.
+
+```bash
+cd backend
+npm install
+npm test
+```
+
+Tests run against a separate `szabist_library_test` database (configured
+in `backend/.env.test`, rebuilt from `database/schema.sql` automatically
+on every run) — they never touch your development database.
+
 ## API Endpoints
 
 | Method | Endpoint | Description |
