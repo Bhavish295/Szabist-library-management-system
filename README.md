@@ -6,7 +6,7 @@ A full-stack library management system for **Shaheed Zulfikar Ali Bhutto Institu
 
 - **Frontend:** React.js, Vite, HTML/CSS
 - **Backend:** Node.js, Express.js
-- **Database:** MySQL
+- **Database:** SQLite (local file, no MySQL install)
 
 ## Features
 
@@ -41,19 +41,11 @@ A full-stack library management system for **Shaheed Zulfikar Ali Bhutto Institu
 
 ### Prerequisites
 - Node.js 18+
-- MySQL 8+
 
-### 1. Database Setup
+The database is a small SQLite file created automatically. You do **not**
+need to install MySQL.
 
-```bash
-mysql -u root -p < database/schema.sql
-```
-
-If you already have a database from before renewals/waitlist support was
-added, also run the migrations in `database/migrations/` in order (fresh
-installs via `schema.sql` above don't need them).
-
-### 2. Backend Setup
+### 1. Backend Setup
 
 ```bash
 cd backend
@@ -63,9 +55,10 @@ npm run seed
 npm run dev
 ```
 
-Edit `.env` with your MySQL credentials and optional SMTP settings for email notifications.
+Optional: add SMTP settings in `.env` for email notifications (in-app
+notifications work without email).
 
-### 3. Frontend Setup
+### 2. Frontend Setup
 
 ```bash
 cd frontend
@@ -86,7 +79,7 @@ Open **http://localhost:5173**
 
 The backend has an integration test suite (Jest + Supertest) covering
 auth, book search, and the full reservation/waitlist and issue/renewal
-flows against a real MySQL database.
+flows against a throwaway SQLite file.
 
 ```bash
 cd backend
@@ -94,9 +87,9 @@ npm install
 npm test
 ```
 
-Tests run against a separate `szabist_library_test` database (configured
-in `backend/.env.test`, rebuilt from `database/schema.sql` automatically
-on every run) — they never touch your development database.
+Tests use `backend/data/library.test.sqlite` (configured in
+`backend/.env.test`, rebuilt from `database/schema.sqlite.sql` on every
+run) — they never touch your development database.
 
 ## API Endpoints
 

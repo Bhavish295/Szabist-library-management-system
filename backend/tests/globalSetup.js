@@ -1,33 +1,22 @@
-// Runs once, before any test file, in Jest's main process. Rebuilds a
-// throwaway test database from the real schema.sql (so the schema tests
-// run against never drifts from what the app actually ships) and seeds
-// the one fixture every test file needs: a librarian account.
+// Rebuilds a throwaway SQLite file from schema.sqlite.sql and seeds
+// the librarian account every test file needs.
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env.test') });
 
 module.exports = async () => {
-  const dbName = process.env.DB_NAME;
-  const conn = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '3306', 10),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD || '',
-    multipleStatements: true,
-  });
+  const dbFile = path.isAbsolute(process.env.DB_FILE)
+    ? process.env.DB_FILE
+    : path.join(__dirname, '..', process.env.DB_FILE || path.join('data', 'library.test.sqlite'));
 
-  await conn.query(`DROP DATABASE IF EXISTS \`${dbName}\`;`);
+  if (fs.existsSync(dbFile)) {
+    fs.unlinkSync(dbFile);
+  }
 
-  const schemaPath = path.join(__dirname, '..', '..', 'database', 'schema.sql');
-  const schema = fs.readFileSync(schemaPath, 'utf8').replace(/szabist_library/g, dbName);
-  await conn.query(schema);
-
-  await conn.query(`USE \`${dbName}\`;`);
+  const { initDatabase, execute } = require('../config/db');
+  await initDatabase();
   const adminHash = await bcrypt.hash('admin123', 10);
-  await conn.query('INSERT INTO Admins (username, password) VALUES (?, ?)', ['admin', adminHash]);
-
-  await conn.end();
+  await execute('INSERT INTO Admins (username, password) VALUES (?, ?)', ['admin', adminHash]);
 };

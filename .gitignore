@@ -12,9 +12,12 @@ frontend/build/
 
 # Database
 mysql-data/
+backend/data/*.sqlite
+backend/data/*.sqlite3
 *.sqlite
 *.sqlite3
 *.db
+!backend/data/.gitkeep
 
 # Uploaded user content
 backend/uploads/covers/*
@@ -32,3 +35,5 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .claude/
+
+backend/.env.test
