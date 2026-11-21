@@ -118,6 +118,6 @@ run) — they never touch your development database.
 ```
 ├── backend/          # Express API server
 ├── frontend/         # React Vite app
-├── database/         # MySQL schema
+├── database/         # SQL schemas and migrations
 └── README.md
 ```
