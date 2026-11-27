@@ -349,4 +349,4 @@ These are **not implemented yet**:
 
 **Bhavish Kumar**: Full Stack Developer · AI Automation Engineer · Backend Developer
 
-[GitHub](https://github.com/Bhavish295) · [LinkedIn](https://www.linkedin.com/in/bhavish-kumar-ab40a9303) · [Portfolio](https://bhavishkumar-portfolio.netlify.app/)
+[GitHub](https://github.com/Bhavish295) · [LinkedIn](https://www.linkedin.com/in/bhavish-kumar-ab40a9303) · [Portfolio](https://bhavish-kumar-portfolio.netlify.app/)
